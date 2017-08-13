@@ -4,6 +4,6 @@ import lombok.Value;
 
 @Value
 public class Link {
-    String source;
-    String target;
+    Node source;
+    Node target;
 }

@@ -1,0 +1,35 @@
+<!doctype html>
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+
+        <title>Universpe</title>
+        <meta name="description" content="PE Universe">
+        <meta name="author" content="Daniel Pettersson">
+
+        <script src="js/3d-force-graph.min.js"></script>
+        <script src="js/qwest.min.js"></script>
+
+        <style type="text/css">
+            body {
+                margin: 0;
+                overflow: hidden;
+            }
+        </style>
+
+    </head>
+
+    <body>
+        <div id="3d-graph"></div>
+        <script type="text/javascript">
+            ForceGraph3D()(document.getElementById("3d-graph"))
+                .cooldownTicks(200)
+                .nameField('id')
+                .autoColorBy('group')
+                .forceEngine('ngraph')
+                .nodeRelSize(0.05)
+                .jsonUrl('data.json' + window.location.search);
+        </script>
+    </body>
+</html>

@@ -1,22 +1,75 @@
 <!doctype html>
 
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
+<head>
+    <meta charset="utf-8">
 
-        <title>Universpe</title>
-        <meta name="description" content="PE Universe">
-        <meta name="author" content="Daniel Pettersson">
+    <title>Universpe</title>
+    <meta name="description" content="PE Universe">
+    <meta name="author" content="Daniel Pettersson">
 
-        <script src="js/3d-force-graph.min.js"></script>
-        <script src="js/qwest.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
 
-        <link rel="stylesheet" href="css/styles.css?v=1.0">
+    <style type="text/css">
+        body {
+            padding-top: 40px;
+            padding-bottom: 40px;
+            background-color: #eee;
+        }
 
-    </head>
+        input {
+            margin-bottom: 1em;
+        }
+
+
+    </style>
+
+</head>
 
     <body>
-        <div id="3d-graph"></div>
-        <script src="js/main.js"></script>
+        <div class="container">
+
+            <div class="row">
+
+                <div class="col"/>
+
+                <div class="col">
+
+                    <form action="graph.html" method="get">
+
+                        <h1>UniversPE</h1>
+
+                        <div class="form-group">
+                            <label for="includeCompany">Företag att inkludera</label>
+                            <input id="includeCompany" name="includeCompany" class="form-control" autofocus="">
+
+                            <label for="excludeCompany">Företag att exkludera</label>
+                            <input id="excludeCompany" name="excludeCompany" class="form-control">
+
+                            <label for="includeClient">Inkludera företag med kund</label>
+                            <input id="includeClient" name="includeClient" class="form-control" autofocus="">
+
+                            <label for="excludeClient">Exkludera företag med kund</label>
+                            <input id="excludeClient" name="excludeClient" class="form-control">
+
+                            <label for="includeSupplier">Inkludera företag med leverantör</label>
+                            <input id="includeSupplier" name="includeSupplier" class="form-control" autofocus="">
+
+                            <label for="excludeSupplier">Exkludera företag med leverantör</label>
+                            <input id="excludeSupplier" name="excludeSupplier" class="form-control">
+
+                            <label for="minThousands">Undre gräns i tusental fakturerade kronor för att inkluderas</label>
+                            <input type="number" id="minThousands" name="minThousands" class="form-control"min="0" value="50000">
+
+                            <button class="btn btn-lg btn-primary btn-block">Visa graf</button>
+                        </div>
+                    </form>
+
+                </div>
+
+                <div class="col"/>
+
+            </div>
+        </div>
     </body>
 </html>

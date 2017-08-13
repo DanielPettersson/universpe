@@ -91,7 +91,7 @@
                     <generator>
                         <database>
                             <name>org.jooq.util.mysql.MySQLDatabase</name>
-                            <includes>company|supplier|client|supplier_invoice|client_invoice</includes>
+                            <includes>company|supplier|client|supplier_invoice|client_invoice|access_grant_blacklist</includes>
                             <excludes/>
                             <inputSchema>accounting</inputSchema>
                         </database>
