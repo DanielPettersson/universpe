@@ -22,6 +22,10 @@ import static org.jooq.impl.DSL.sum;
 @Slf4j
 public class Fetcher {
 
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/accounting";
+    private static final String DB_USER = "root";
+    private static final String DB_PASS = "";
+
     private static final Company c = Company.COMPANY.as("c");
     private static final Client cl = Client.CLIENT.as("cl");
     private static final ClientInvoice cli = ClientInvoice.CLIENT_INVOICE.as("cli");
@@ -34,7 +38,7 @@ public class Fetcher {
         final Map<String, Node> nodes = new HashMap<>();
         final List<Link> links = new ArrayList<>();
 
-        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/accounting", "root", "")) {
+        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS)) {
             DSLContext jooq = DSL.using(conn, SQLDialect.MYSQL);
 
             jooq.select(c.ID, c.NAME).from(c)
@@ -58,8 +62,8 @@ public class Fetcher {
 
                     final Node clientNode = nodes.computeIfAbsent(client.value2(), k -> new Node(k, Node.Type.Client));
                     links.add(new Link(companyNode, clientNode));
-                    companyNode.incrementVal(client.value3().intValue() / 10000);
-                    clientNode.incrementVal(client.value3().intValue() / 10000);
+                    companyNode.incrementVal(client.value3().longValue());
+                    clientNode.incrementVal(client.value3().longValue());
                 });
 
                 jooq.select(s.ID, s.NAME, sum(si.CURRENCY_RATE.multiply(si.AMOUNT.add(si.VAT))))
@@ -73,8 +77,8 @@ public class Fetcher {
 
                     final Node supplierNode = nodes.computeIfAbsent(supplier.value2(), k -> new Node(k, Node.Type.Supplier));
                     links.add(new Link(supplierNode, companyNode));
-                    companyNode.incrementVal(supplier.value3().intValue() / 10000);
-                    supplierNode.incrementVal(supplier.value3().intValue() / 10000);
+                    companyNode.incrementVal(supplier.value3().longValue());
+                    supplierNode.incrementVal(supplier.value3().longValue());
                 });
 
             });

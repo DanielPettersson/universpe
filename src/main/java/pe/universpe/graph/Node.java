@@ -20,7 +20,7 @@ public class Node {
         this.type = type;
     }
 
-    public void incrementVal(final int val) {
+    public void incrementVal(final long val) {
         this.val += val;
     }
 

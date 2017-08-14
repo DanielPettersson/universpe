@@ -22,13 +22,13 @@ public class NodeAdapter implements JsonSerializer<Node> {
     public JsonElement serialize(Node node, Type type, JsonSerializationContext jsonSerializationContext) {
 
 
-        final String amountStr = currencyFormatInstance.format(node.getVal() * 1000);
+        final String amountStr = currencyFormatInstance.format(node.getVal() / 100);
 
         final JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("id", node.getId());
         jsonObject.addProperty("name", String.format("%s, (%s) %s", node.getId(), formatNodeType(node.getType()), amountStr));
         jsonObject.addProperty("group", node.getType().ordinal());
-        jsonObject.addProperty("val", node.getVal());
+        jsonObject.addProperty("val", node.getVal() / 100000);
         jsonObject.addProperty("color", node.isSelected() ? "#FF0000" : "");
         return jsonObject;
     }

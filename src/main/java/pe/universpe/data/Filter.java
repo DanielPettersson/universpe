@@ -79,7 +79,7 @@ public class Filter {
                 .collect(toSet());
 
         final Set<Node> filteredNodes = nodes.stream()
-                .filter(n -> n.getVal() > minThousands || n.isSelected())
+                .filter(n -> n.getVal() / 100000 > minThousands || n.isSelected())
                 .filter(n -> !n.getType().isCompany() || (isIncluded(n.getId(), includeCompany) && !isExcluded(n.getId(), excludeCompany)))
                 .filter(n -> !n.getType().isCompany() || includeClient.isEmpty() || clientIncCompanySet.contains(n))
                 .filter(n -> !n.getType().isCompany() || excludeClient.isEmpty() || !clientExCompanySet.contains(n))

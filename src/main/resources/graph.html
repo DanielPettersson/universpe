@@ -24,12 +24,11 @@
         <div id="3d-graph"></div>
         <script type="text/javascript">
             ForceGraph3D()(document.getElementById("3d-graph"))
-                .cooldownTicks(200)
                 .autoColorBy('group')
                 .nodeResolution(6)
                 .lineOpacity(0.15)
                 .forceEngine('ngraph')
-                .nodeRelSize(0.05)
+                .nodeRelSize(0.08)
                 .jsonUrl('data.json' + window.location.search);
         </script>
     </body>
