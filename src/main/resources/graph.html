@@ -25,8 +25,9 @@
         <script type="text/javascript">
             ForceGraph3D()(document.getElementById("3d-graph"))
                 .cooldownTicks(200)
-                .nameField('id')
                 .autoColorBy('group')
+                .nodeResolution(6)
+                .lineOpacity(0.15)
                 .forceEngine('ngraph')
                 .nodeRelSize(0.05)
                 .jsonUrl('data.json' + window.location.search);

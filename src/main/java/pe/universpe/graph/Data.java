@@ -2,11 +2,10 @@ package pe.universpe.graph;
 
 import lombok.Value;
 
-import java.util.List;
-import java.util.Set;
+import java.util.Collection;
 
 @Value
 public class Data {
-    Set<Node> nodes;
-    List<Link> links;
+    Collection<Node> nodes;
+    Collection<Link> links;
 }
