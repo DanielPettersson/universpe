@@ -9,7 +9,7 @@ public class Node {
     final String id;
     int group;
     int val;
-    String color;
+    String color = "";
 
     public Node(String id) {
         this.id = id;
