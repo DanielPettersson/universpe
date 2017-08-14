@@ -2,8 +2,12 @@ package pe.universpe.data;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
+import org.jooq.Record2;
+import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
+import org.jooq.types.UInteger;
+import pe.universpe.Main;
 import pe.universpe.graph.Data;
 import pe.universpe.graph.Link;
 import pe.universpe.graph.Node;
@@ -12,10 +16,7 @@ import pe.universpe.jooq.tables.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.jooq.impl.DSL.sum;
 
@@ -26,6 +27,8 @@ public class Fetcher {
     private static final String DB_USER = "root";
     private static final String DB_PASS = "";
 
+    private final UUID progressUuid;
+
     private static final Company c = Company.COMPANY.as("c");
     private static final Client cl = Client.CLIENT.as("cl");
     private static final ClientInvoice cli = ClientInvoice.CLIENT_INVOICE.as("cli");
@@ -33,7 +36,11 @@ public class Fetcher {
     private static final SupplierInvoice si = SupplierInvoice.SUPPLIER_INVOICE.as("si");
     private static final AccessGrantBlacklist agb = AccessGrantBlacklist.ACCESS_GRANT_BLACKLIST.as("agb");
 
-    public Data fetchData() throws SQLException {
+    public Fetcher(UUID progressUuid) {
+        this.progressUuid = progressUuid;
+    }
+
+    public Data fetchData() {
 
         final Map<String, Node> nodes = new HashMap<>();
         final List<Link> links = new ArrayList<>();
@@ -41,11 +48,15 @@ public class Fetcher {
         try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS)) {
             DSLContext jooq = DSL.using(conn, SQLDialect.MYSQL);
 
-            jooq.select(c.ID, c.NAME).from(c)
+            final Result<Record2<UInteger, String>> companies = jooq.select(c.ID, c.NAME).from(c)
                     .where(c.STATUS.eq("Production"))
                     .and(c.END_DATE.isNull().or(c.END_DATE.gt(DSL.currentDate())))
                     .and(c.ID.notIn(jooq.selectDistinct(agb.COMPANY_ID).from(agb)))
-                    .fetch().forEach(company -> {
+                    .fetch();
+
+            for (int i = 0; i < companies.size(); i++) {
+
+                final Record2<UInteger, String> company = companies.get(i);
 
                 final Node companyNode = nodes.computeIfAbsent(company.value2(), Node::new);
                 companyNode.setType(Node.Type.Company);
@@ -81,11 +92,14 @@ public class Fetcher {
                     supplierNode.incrementVal(supplier.value3().longValue());
                 });
 
-            });
-
+                final Float progress = (float) i / companies.size() * 100;
+                Main.progressMap.put(progressUuid, progress.intValue());
+            }
 
             log.info("Found " + nodes.size() + " nodes and " + links.size() + " links");
 
+        } catch (SQLException e) {
+            // Ignore
         }
 
         return new Data(nodes.values(), links);

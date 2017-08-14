@@ -4,32 +4,122 @@
     <head>
         <meta charset="utf-8">
 
-        <title>Universpe</title>
+        <title>UniversPE</title>
         <meta name="description" content="PE Universe">
         <meta name="author" content="Daniel Pettersson">
 
         <script src="js/3d-force-graph.min.js"></script>
         <script src="js/qwest.min.js"></script>
 
+        <link rel="stylesheet" type="text/css" href="css/circle.css"/>
+
         <style type="text/css">
             body {
                 margin: 0;
                 overflow: hidden;
+                font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+                background-color: #000010;
             }
+
+            .centered {
+                position: absolute;
+                width: 500px;
+                height: 500px;
+                z-index: 15;
+                top: 50%;
+                left: 50%;
+                margin: -250px 0 0 -250px;
+            }
+
+            .fadeout {
+                animation-duration: 2s;
+                animation-name: fadeout;
+                opacity: 0;
+            }
+
+            @keyframes fadeout {
+                from {
+                    opacity: 1;
+                    transform: scale(1, 1);
+                }
+
+                to {
+                    opacity: 0;
+                    transform: scale(1.5, 1.5);
+                }
+            }
+
         </style>
 
     </head>
 
     <body>
+
         <div id="3d-graph"></div>
+
+        <div class="c100 p50 big centered" id="progress">
+            <span id="progressText">50%</span>
+            <div class="slice">
+                <div class="bar"></div>
+                <div class="fill"></div>
+            </div>
+        </div>
+
         <script type="text/javascript">
-            ForceGraph3D()(document.getElementById("3d-graph"))
-                .autoColorBy('group')
-                .nodeResolution(6)
-                .lineOpacity(0.15)
-                .forceEngine('ngraph')
-                .nodeRelSize(0.08)
-                .jsonUrl('data.json' + window.location.search);
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', 'request-data' + window.location.search);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    checkProgress(xhr.responseText);
+                } else {
+                    console.log(xhr);
+                }
+            };
+            xhr.send();
+
+            var checkProgress = function(uuid) {
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', 'progress-data?data-uuid=' + uuid);
+                xhr.onload = function() {
+
+                    if (xhr.status === 200) {
+                        if (xhr.responseText === '100') {
+
+                            drawProgress('100');
+                            fadeoutProgress();
+
+                            ForceGraph3D()(document.getElementById("3d-graph"))
+                                .autoColorBy('group')
+                                .nodeResolution(6)
+                                .lineOpacity(0.15)
+                                .forceEngine('d3')
+                                .nodeRelSize(0.04)
+                                .jsonUrl('get-data?data-uuid=' + uuid);
+                        } else {
+                            drawProgress(xhr.responseText);
+                            setTimeout(checkProgress(uuid), 100);
+                        }
+                    } else {
+                        console.log(xhr);
+                    }
+                };
+                xhr.send();
+            };
+
+            var fadeoutProgress = function() {
+                document.getElementById('progress').classList.add('fadeout');
+                setTimeout(function () {
+                    var element = document.getElementById('progress');
+                    element.parentNode.removeChild(element);
+                }, 2000)
+            };
+
+            var drawProgress = function(progress) {
+                document.getElementById('progressText').innerText = progress + '%';
+                document.getElementById('progress').className = 'c100 p' + progress + ' big centered';
+            };
+
         </script>
     </body>
 </html>
