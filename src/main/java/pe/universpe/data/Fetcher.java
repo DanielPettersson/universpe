@@ -1,10 +1,7 @@
 package pe.universpe.data;
 
 import lombok.extern.slf4j.Slf4j;
-import org.jooq.DSLContext;
-import org.jooq.Record2;
-import org.jooq.Result;
-import org.jooq.SQLDialect;
+import org.jooq.*;
 import org.jooq.impl.DSL;
 import org.jooq.types.UInteger;
 import pe.universpe.Main;
@@ -18,7 +15,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.*;
 
-import static org.jooq.impl.DSL.sum;
+import static org.jooq.impl.DSL.*;
 
 @Slf4j
 public class Fetcher {
@@ -40,7 +37,7 @@ public class Fetcher {
         this.progressUuid = progressUuid;
     }
 
-    public Data fetchData() {
+    public Data fetchData(Filter filter) {
 
         final Map<String, Node> nodes = new HashMap<>();
         final List<Link> links = new ArrayList<>();
@@ -52,13 +49,15 @@ public class Fetcher {
                     .where(c.STATUS.eq("Production"))
                     .and(c.END_DATE.isNull().or(c.END_DATE.gt(DSL.currentDate())))
                     .and(c.ID.notIn(jooq.selectDistinct(agb.COMPANY_ID).from(agb)))
+                    .and(include(filter.getIncludeCompany(), c.NAME))
+                    .and(exclude(filter.getExcludeCompany(), c.NAME))
                     .fetch();
 
             for (int i = 0; i < companies.size(); i++) {
 
                 final Record2<UInteger, String> company = companies.get(i);
 
-                final Node companyNode = nodes.computeIfAbsent(company.value2(), Node::new);
+                final Node companyNode = nodes.computeIfAbsent(company.value2().toLowerCase(), k -> new Node(company.value2()));
                 companyNode.setType(Node.Type.Company);
 
                 jooq.select(cl.ID, cl.NAME, sum(cli.ACCOUNTING_AMOUNT))
@@ -68,10 +67,12 @@ public class Fetcher {
                         .and(cl.COMPANY_ID.eq(company.value1()))
                         .and(cli.CERTIFIED.isTrue())
                         .and(cli.DELETED.isFalse())
+                        .and(include(filter.getIncludeClient(), cl.NAME))
+                        .and(exclude(filter.getExcludeClient(), cl.NAME))
                         .groupBy(cl.ID)
                         .fetch().forEach(client -> {
 
-                    final Node clientNode = nodes.computeIfAbsent(client.value2(), k -> new Node(k, Node.Type.Client));
+                    final Node clientNode = nodes.computeIfAbsent(client.value2().toLowerCase(), k -> new Node(client.value2(), Node.Type.Client));
                     links.add(new Link(companyNode, clientNode));
                     companyNode.incrementVal(client.value3().longValue());
                     clientNode.incrementVal(client.value3().longValue());
@@ -83,10 +84,12 @@ public class Fetcher {
                         .where(s.ACTIVE.isTrue())
                         .and(s.COMPANY_ID.eq(company.value1()))
                         .and(si.CERTIFIED.isTrue())
+                        .and(include(filter.getIncludeSupplier(), s.NAME))
+                        .and(exclude(filter.getExcludeSupplier(), s.NAME))
                         .groupBy(s.ID)
                         .fetch().forEach(supplier -> {
 
-                    final Node supplierNode = nodes.computeIfAbsent(supplier.value2(), k -> new Node(k, Node.Type.Supplier));
+                    final Node supplierNode = nodes.computeIfAbsent(supplier.value2().toLowerCase(), k -> new Node(supplier.value2(), Node.Type.Supplier));
                     links.add(new Link(supplierNode, companyNode));
                     companyNode.incrementVal(supplier.value3().longValue());
                     supplierNode.incrementVal(supplier.value3().longValue());
@@ -102,8 +105,24 @@ public class Fetcher {
             // Ignore
         }
 
-        return new Data(nodes.values(), links);
+        return filter.postProcess(new Data(nodes.values(), links));
 
+    }
+
+    private static Condition include(final List<String> vals, final Field<String> field) {
+        if (vals.isEmpty()) {
+            return trueCondition();
+        } else {
+            return vals.stream().map(field::contains).reduce(falseCondition(), Condition::or);
+        }
+    }
+
+    private static Condition exclude(final List<String> vals, final Field<String> field) {
+        if (vals.isEmpty()) {
+            return trueCondition();
+        } else {
+            return not(vals.stream().map(field::contains).reduce(falseCondition(), Condition::or));
+        }
     }
 
 }

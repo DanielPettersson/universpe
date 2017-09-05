@@ -1,6 +1,7 @@
 package pe.universpe.data;
 
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import pe.universpe.graph.Data;
@@ -13,6 +14,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -20,7 +22,11 @@ import static java.util.stream.Collectors.toSet;
 
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Getter
 public class Filter {
+
+    private static final long NORMALIZE_CEIL = 100000;
+    private static final String PE_ACCOUNTING = "PE Accounting Sweden AB";
 
     int minThousands;
     List<String> includeCompany;
@@ -30,6 +36,8 @@ public class Filter {
     List<String> includeClient;
     List<String> excludeClient;
 
+    boolean prune;
+
     public Filter(final Request req) {
         minThousands = parseInt(req.queryParams("minThousands"));
         includeCompany = getListParam(req, "includeCompany");
@@ -38,80 +46,49 @@ public class Filter {
         excludeSupplier = getListParam(req, "excludeSupplier");
         includeClient = getListParam(req, "includeClient");
         excludeClient = getListParam(req, "excludeClient");
+        prune = parseBoolean(req.queryParams("prune"));
     }
 
-    public Data doFilter(final pe.universpe.graph.Data data) {
+    Data postProcess(final pe.universpe.graph.Data data) {
 
         final Collection<Link> links = data.getLinks();
         final Collection<Node> nodes = data.getNodes();
 
-        nodes.forEach(n -> {
+        nodes.stream().filter(n -> n.getId().equalsIgnoreCase(PE_ACCOUNTING) || isIncludedClient(n) || isIncludedSupplier(n)).forEach(n -> n.setSelected(true));
 
-            if (n.getType().isClient() && !includeClient.isEmpty() && isIncluded(n.getId(), includeClient)) {
-                n.setSelected(true);
-            } else if (n.getType().isSupplier() && !includeSupplier.isEmpty() && isIncluded(n.getId(), includeSupplier)) {
-                n.setSelected(true);
-            }
-        });
-
-        final Set<Node> clientIncCompanySet = links.stream()
-                .filter(l -> l.getTarget().getType().isClient())
-                .filter(l -> isIncluded(l.getTarget().getId(), includeClient))
-                .map(Link::getSource)
-                .collect(toSet());
-
-        final Set<Node> supplierIncCompanySet = links.stream()
-                .filter(l -> l.getSource().getType().isSupplier())
-                .filter(l -> isIncluded(l.getSource().getId(), includeSupplier))
-                .map(Link::getTarget)
-                .collect(toSet());
-
-        final Set<Node> clientExCompanySet = links.stream()
-                .filter(l -> l.getTarget().getType().isClient())
-                .filter(l -> isExcluded(l.getTarget().getId(), excludeClient))
-                .map(Link::getSource)
-                .collect(toSet());
-
-        final Set<Node> supplierExCompanySet = links.stream()
-                .filter(l -> l.getSource().getType().isSupplier())
-                .filter(l -> isExcluded(l.getSource().getId(), excludeSupplier))
-                .map(Link::getTarget)
-                .collect(toSet());
-
-        final Set<Node> filteredNodes = nodes.stream()
-                .filter(n -> n.getVal() / 100000 > minThousands || n.isSelected())
-                .filter(n -> !n.getType().isCompany() || (isIncluded(n.getId(), includeCompany) && !isExcluded(n.getId(), excludeCompany)))
-                .filter(n -> !n.getType().isCompany() || includeClient.isEmpty() || clientIncCompanySet.contains(n))
-                .filter(n -> !n.getType().isCompany() || excludeClient.isEmpty() || !clientExCompanySet.contains(n))
-                .filter(n -> !n.getType().isCompany() || includeSupplier.isEmpty() || supplierIncCompanySet.contains(n))
-                .filter(n -> !n.getType().isCompany() || excludeSupplier.isEmpty() || !supplierExCompanySet.contains(n))
-                .collect(toSet());
+        Set<Node> filteredNodes = nodes.stream().filter(n -> n.isSelected() || n.getVal() / 100000 >= minThousands).collect(toSet());
 
         final List<Link> filteredLinks = links.stream()
                 .filter(l -> filteredNodes.contains(l.getSource()) && filteredNodes.contains(l.getTarget()))
                 .collect(toList());
 
-        final Set<Node> filteredAndPrunedNodes = filteredNodes.stream()
-                .filter(n -> filteredLinks.stream().anyMatch(l -> l.getSource().equals(n) || l.getTarget().equals(n)))
+        final Set<Node> filteredNodes2 = filteredNodes.stream()
+                .filter(n -> !prune || filteredLinks.stream().anyMatch(l -> l.getSource().equals(n) || l.getTarget().equals(n)))
                 .collect(toSet());
 
-        log.info("Filtered to " + filteredAndPrunedNodes.size() + " nodes and " + filteredLinks.size() + " links");
+        final long maxVal = Math.max(filteredNodes2.stream().mapToLong(Node::getVal).max().orElse(1L), 1);
+        final float normalizeFactor = NORMALIZE_CEIL / (float) maxVal;
+        filteredNodes2.forEach(n -> n.setNormalizedVal(Float.valueOf(n.getVal() * normalizeFactor).longValue()));
 
-        return new Data(filteredAndPrunedNodes, filteredLinks);
-    }
+        filteredNodes2.stream().filter(n -> n.getId().equals(PE_ACCOUNTING)).forEach(n -> n.setSelected(true));
 
-    private static boolean isIncluded(final String val, final List<String> vals) {
-        return vals.isEmpty() || vals.stream().anyMatch(v -> val.toLowerCase().contains(v.toLowerCase()));
-    }
+        log.info("Filtered to " + filteredNodes2.size() + " nodes and " + filteredLinks.size() + " links");
+        log.info("Normalize factor " + normalizeFactor);
 
-    private static boolean isExcluded(final String val, final List<String> vals) {
-        return vals.stream().anyMatch(v -> val.toLowerCase().contains(v.toLowerCase()));
+
+        return new Data(filteredNodes2, filteredLinks);
     }
 
     private static List<String> getListParam(final Request req, final String paramName) {
         return req.queryParams(paramName).isEmpty() ? emptyList() : Arrays.stream(req.queryParams(paramName).split(",")).map(String::trim).collect(toList());
     }
 
+    private boolean isIncludedClient(final Node node) {
+        return includeClient.stream().anyMatch(val -> node.getType().isClient() && node.getId().toLowerCase().contains(val.toLowerCase()));
+    }
 
+    private boolean isIncludedSupplier(final Node node) {
+        return includeSupplier.stream().anyMatch(val -> node.getType().isSupplier() && node.getId().toLowerCase().contains(val.toLowerCase()));
+    }
 
 }

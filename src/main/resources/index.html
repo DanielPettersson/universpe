@@ -66,20 +66,25 @@
                             <label for="excludeCompany">Företag att exkludera</label>
                             <input id="excludeCompany" name="excludeCompany" class="form-control">
 
-                            <label for="includeClient">Inkludera företag med kund</label>
+                            <label for="includeClient">Kund att inkludera</label>
                             <input id="includeClient" name="includeClient" class="form-control" autofocus="">
 
-                            <label for="excludeClient">Exkludera företag med kund</label>
+                            <label for="excludeClient">Kund att exkludera</label>
                             <input id="excludeClient" name="excludeClient" class="form-control">
 
-                            <label for="includeSupplier">Inkludera företag med leverantör</label>
+                            <label for="includeSupplier">Leverantör att inkludera</label>
                             <input id="includeSupplier" name="includeSupplier" class="form-control" autofocus="">
 
-                            <label for="excludeSupplier">Exkludera företag med leverantör</label>
+                            <label for="excludeSupplier">Leverantör att exkludera</label>
                             <input id="excludeSupplier" name="excludeSupplier" class="form-control">
 
                             <label for="minThousands">Undre gräns i tusental fakturerade kronor för att inkluderas</label>
                             <input type="number" id="minThousands" name="minThousands" class="form-control"min="0" value="5000">
+
+                            <label class="form-check-label">
+                                <input name="prune" type="checkbox" class="form-check-input" value="true" checked>
+                                Ta bort noder utan kopplingar
+                            </label>
 
                             <button class="btn btn-lg btn-primary btn-block">Visa graf</button>
                         </div>

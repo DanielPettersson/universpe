@@ -6,9 +6,11 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(of = "id")
 public class Node {
+
     final String id;
     Type type;
     long val;
+    long normalizedVal;
     boolean selected;
 
     public Node(final String id) {
@@ -22,6 +24,7 @@ public class Node {
 
     public void incrementVal(final long val) {
         this.val += val;
+        this.normalizedVal = val;
     }
 
     public enum Type {

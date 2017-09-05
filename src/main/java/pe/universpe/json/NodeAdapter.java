@@ -28,7 +28,7 @@ public class NodeAdapter implements JsonSerializer<Node> {
         jsonObject.addProperty("id", node.getId());
         jsonObject.addProperty("name", String.format("%s, (%s) %s", node.getId(), formatNodeType(node.getType()), amountStr));
         jsonObject.addProperty("group", node.getType().ordinal());
-        jsonObject.addProperty("val", node.getVal() / 100000);
+        jsonObject.addProperty("val", node.getNormalizedVal());
         jsonObject.addProperty("color", node.isSelected() ? "#FF0000" : "");
         return jsonObject;
     }

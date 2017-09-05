@@ -58,7 +58,7 @@ public class Main {
 
         @Override
         public void run() {
-            final Data data = filter.doFilter(new Fetcher(uuid).fetchData());
+            final Data data = new Fetcher(uuid).fetchData(filter);
             dataMap.put(uuid, data);
             progressMap.put(uuid, 100);
         }
