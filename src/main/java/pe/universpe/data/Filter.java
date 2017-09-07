@@ -39,7 +39,7 @@ public class Filter {
     boolean prune;
 
     public Filter(final Request req) {
-        minThousands = parseInt(req.queryParams("minThousands"));
+        minThousands = getIntParam(req, "minThousands");
         includeCompany = getListParam(req, "includeCompany");
         excludeCompany = getListParam(req, "excludeCompany");
         includeSupplier = getListParam(req, "includeSupplier");
@@ -77,6 +77,15 @@ public class Filter {
 
 
         return new Data(filteredNodes2, filteredLinks);
+    }
+
+
+    private static int getIntParam(final Request req, final String paramName) {
+        try {
+            return parseInt(req.queryParams(paramName));
+        } catch (NumberFormatException e) {
+            return  0;
+        }
     }
 
     private static List<String> getListParam(final Request req, final String paramName) {
