@@ -7,7 +7,6 @@ import pe.universpe.data.Filter;
 import pe.universpe.graph.Data;
 import pe.universpe.json.GsonFactory;
 
-import java.sql.SQLException;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,9 +21,9 @@ public class Main {
     private static final Map<UUID, Data> dataMap = new ConcurrentHashMap<>();
     public static final Map<UUID, Integer> progressMap = new ConcurrentHashMap<>();
 
-    public static void main(final String[] args) throws SQLException {
+    public static void main(final String[] args) {
 
-        port(80);
+        port(8000);
         staticFiles.location("");
 
         final ExecutorService executorService = Executors.newCachedThreadPool();
